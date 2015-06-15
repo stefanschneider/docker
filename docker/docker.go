@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -67,13 +66,7 @@ func main() {
 	if len(flHosts) == 0 {
 		defaultHost := os.Getenv("DOCKER_HOST")
 		if defaultHost == "" || *flDaemon {
-			if runtime.GOOS != "windows" {
-				// If we do not have a host, default to unix socket
-				defaultHost = fmt.Sprintf("unix://%s", opts.DefaultUnixSocket)
-			} else {
-				// If we do not have a host, default to TCP socket on Windows
-				defaultHost = fmt.Sprintf("tcp://%s:%d", opts.DefaultHTTPHost, opts.DefaultHTTPPort)
-			}
+			defaultHost = opts.DefaultLocalAddr
 		}
 		defaultHost, err := opts.ValidateHost(defaultHost)
 		if err != nil {
@@ -111,7 +104,13 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Please specify only one -H")
 		os.Exit(0)
 	}
-	protoAddrParts := strings.SplitN(flHosts[0], "://", 2)
+
+	// A Windows named pipe is in the format npipe:\\machine\pipe\pipename
+	splitter := "://"
+	if strings.HasPrefix(strings.ToLower(flHosts[0]), "npipe:") {
+		splitter = `:\\`
+	}
+	protoAddrParts := strings.SplitN(flHosts[0], splitter, 2)
 
 	var tlsConfig *tls.Config
 	if *flTls {

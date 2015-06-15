@@ -208,7 +208,7 @@ func NewDockerCli(in io.ReadCloser, out, err io.Writer, keyFile string, proto, a
 	tr := &http.Transport{
 		TLSClientConfig: tlsConfig,
 	}
-	sockets.ConfigureTCPTransport(tr, proto, addr)
+	sockets.ConfigureTransport(tr, proto, addr)
 
 	configFile, e := cliconfig.Load(cliconfig.ConfigDir())
 	if e != nil {

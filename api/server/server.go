@@ -85,7 +85,13 @@ func (s *Server) ServeApi(protoAddrs []string) error {
 	var chErrors = make(chan error, len(protoAddrs))
 
 	for _, protoAddr := range protoAddrs {
-		protoAddrParts := strings.SplitN(protoAddr, "://", 2)
+
+		// A Windows named pipe is in the format npipe:\\machine\pipe\pipename
+		splitter := "://"
+		if strings.HasPrefix(protoAddr, "npipe:") {
+			splitter = `:\\`
+		}
+		protoAddrParts := strings.SplitN(protoAddr, splitter, 2)
 		if len(protoAddrParts) != 2 {
 			return fmt.Errorf("bad format, expected PROTO://ADDR")
 		}
@@ -96,7 +102,7 @@ func (s *Server) ServeApi(protoAddrs []string) error {
 		s.servers = append(s.servers, srv...)
 
 		for _, s := range srv {
-			logrus.Infof("Listening for HTTP on %s (%s)", protoAddrParts[0], protoAddrParts[1])
+			logrus.Infof("Listening on %s (%s)", protoAddrParts[0], protoAddrParts[1])
 			go func(s serverCloser) {
 				if err := s.Serve(); err != nil && strings.Contains(err.Error(), "use of closed network connection") {
 					err = nil

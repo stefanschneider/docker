@@ -2,23 +2,24 @@ package parsers
 
 import (
 	"fmt"
-	"runtime"
 	"strconv"
 	"strings"
 )
 
 // FIXME: Change this not to receive default value as parameter
-func ParseHost(defaultTCPAddr, defaultUnixAddr, addr string) (string, error) {
+func ParseHost(defaultTCPAddr, defaultLocalAddr, addr string) (string, error) {
 	addr = strings.TrimSpace(addr)
+	addr = strings.ToLower(addr)
 	if addr == "" {
-		if runtime.GOOS != "windows" {
-			addr = fmt.Sprintf("unix://%s", defaultUnixAddr)
-		} else {
-			// Note - defaultTCPAddr already includes tcp:// prefix
-			addr = fmt.Sprintf("%s", defaultTCPAddr)
-		}
+		addr = defaultLocalAddr
 	}
-	addrParts := strings.Split(addr, "://")
+
+	// A Windows named pipe is in the format npipe:\\machine\pipe\pipename
+	splitter := "://"
+	if strings.HasPrefix(addr, "npipe:") {
+		splitter = `:\\`
+	}
+	addrParts := strings.Split(addr, splitter)
 	if len(addrParts) == 1 {
 		addrParts = []string{"tcp", addrParts[0]}
 	}
@@ -27,12 +28,30 @@ func ParseHost(defaultTCPAddr, defaultUnixAddr, addr string) (string, error) {
 	case "tcp":
 		return ParseTCPAddr(addrParts[1], defaultTCPAddr)
 	case "unix":
-		return ParseUnixAddr(addrParts[1], defaultUnixAddr)
+		return ParseUnixAddr(addrParts[1], defaultLocalAddr)
+	case "npipe":
+		return ParseWindowsNamedPipeAddr(addrParts[1], defaultLocalAddr)
 	case "fd":
 		return addr, nil
 	default:
 		return "", fmt.Errorf("Invalid bind address format: %s", addr)
 	}
+}
+
+func ParseWindowsNamedPipeAddr(addr string, defaultAddr string) (string, error) {
+	addr = strings.TrimPrefix(addr, "npipe://")
+	if strings.Contains(addr, "://") {
+		return "", fmt.Errorf("Invalid proto, expected npipe: %s", addr)
+	}
+	if addr == "" {
+		return defaultAddr, nil
+	}
+	pathParts := strings.Split(addr, string(`\`))
+	if len(pathParts) < 3 || pathParts[0] == "" || pathParts[1] != "pipe" || pathParts[2] == "" {
+		return "", fmt.Errorf("Invalid named pipe address format: %s", addr)
+	}
+
+	return fmt.Sprintf(`npipe:\\%s`, addr), nil
 }
 
 func ParseUnixAddr(addr string, defaultAddr string) (string, error) {
@@ -41,9 +60,10 @@ func ParseUnixAddr(addr string, defaultAddr string) (string, error) {
 		return "", fmt.Errorf("Invalid proto, expected unix: %s", addr)
 	}
 	if addr == "" {
-		addr = defaultAddr
+		return defaultAddr, nil
+	} else {
+		return fmt.Sprintf("unix://%s", addr), nil
 	}
-	return fmt.Sprintf("unix://%s", addr), nil
 }
 
 func ParseTCPAddr(addr string, defaultAddr string) (string, error) {

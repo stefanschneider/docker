@@ -3,11 +3,12 @@
 package server
 
 import (
-	"errors"
+	"fmt"
 	"net"
 	"net/http"
 
 	"github.com/docker/docker/daemon"
+	"github.com/docker/docker/pkg/sockets"
 	"github.com/docker/docker/pkg/version"
 	"github.com/docker/docker/runconfig"
 )
@@ -24,9 +25,14 @@ func (s *Server) newServer(proto, addr string) ([]serverCloser, error) {
 			return nil, err
 		}
 		ls = append(ls, l)
-
+	case "npipe":
+		l, err := sockets.NewWindowsNamedPipeSocket(addr, s.start)
+		if err != nil {
+			return nil, err
+		}
+		ls = append(ls, l)
 	default:
-		return nil, errors.New("Invalid protocol format. Windows only supports tcp.")
+		return nil, fmt.Errorf("Invalid protocol format: %q", proto)
 	}
 
 	var res []serverCloser
@@ -40,7 +46,6 @@ func (s *Server) newServer(proto, addr string) ([]serverCloser, error) {
 		})
 	}
 	return res, nil
-
 }
 
 func (s *Server) AcceptConnections(d *daemon.Daemon) {
