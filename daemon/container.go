@@ -264,6 +264,12 @@ func (container *Container) Start() (err error) {
 		return err
 	}
 
+	// Make sure NetworkMode has an acceptable value. We do this to ensure
+	// backwards API compatibility.
+	if container.hostConfig.NetworkMode == runconfig.NetworkMode("") {
+		container.hostConfig.NetworkMode = runconfig.NetworkMode("default")
+	}
+
 	if err := container.initializeNetworking(); err != nil {
 		return err
 	}
