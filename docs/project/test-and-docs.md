@@ -233,9 +233,9 @@ with new memory settings.
 6. Restart your container and try your test again.
 
 
-## Testing just the Windows client
+## Testing the Windows client against a Linux daemon
 
-This explains how to test the Windows client on a Windows server set up as a
+This explains how to test the Windows client from a Windows machine set up as a 
 development environment.  You'll use the **Git Bash** came with the Git for
 Windows installation.  **Git Bash** just as it sounds allows you to run a Bash
 terminal on Windows. 
@@ -248,19 +248,12 @@ terminal on Windows.
 
 		$ cd /c/gopath/src/github.com/docker/docker
     
-3. Set `DOCKER_CLIENTONLY` as follows:
-
-		$ export DOCKER_CLIENTONLY=1
-     
-	This ensures you are building only the client binary instead of both the
-	binary and the daemon.
-	
-4. Set `DOCKER_TEST_HOST` to the `tcp://IP_ADDRESS:2376` value; substitute your
+3. Set `DOCKER_TEST_HOST` to the `tcp://IP_ADDRESS:2376` value; substitute your
 machine's actual IP address, for example:
 
 		$ export DOCKER_TEST_HOST=tcp://263.124.23.200:2376
 
-5. Make the binary and the test:
+4. Make the binary and the test:
 
 		$ hack/make.sh binary test-integration-cli
   	
