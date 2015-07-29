@@ -6,8 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -67,19 +67,28 @@ func SpecifiesCurrentDir(path string) bool {
 // SplitPathDirEntry splits the given path between its
 // parent directory and its basename in that directory.
 func SplitPathDirEntry(localizedPath string) (dir, base string) {
-	normalizedPath := filepath.ToSlash(localizedPath)
+	var normalizedPath string
+	// On Windows, ToSlash would convert the path to a Linux-style path which
+	// wouldn't work with filepath.* operations. Although it should already
+	// contain \, there is no harm ensuring this by using FromSlash instead.
+	if runtime.GOOS != "windows" {
+		normalizedPath = filepath.ToSlash(localizedPath)
+	} else {
+		normalizedPath = filepath.FromSlash(localizedPath)
+	}
+
+	// On unix-like platforms, vol will always be zero-length
 	vol := filepath.VolumeName(normalizedPath)
 	normalizedPath = normalizedPath[len(vol):]
 
-	if normalizedPath == "/" {
+	if normalizedPath == string(os.PathSeparator) {
 		// Specifies the root path.
 		return filepath.FromSlash(vol + normalizedPath), "."
 	}
 
-	trimmedPath := vol + strings.TrimRight(normalizedPath, "/")
-
-	dir = filepath.FromSlash(path.Dir(trimmedPath))
-	base = filepath.FromSlash(path.Base(trimmedPath))
+	trimmedPath := vol + strings.TrimRight(normalizedPath, string(os.PathSeparator))
+	dir = filepath.FromSlash(filepath.Dir(trimmedPath))
+	base = filepath.FromSlash(filepath.Base(trimmedPath))
 
 	return dir, base
 }

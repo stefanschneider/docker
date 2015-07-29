@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/docker/docker/api/types"
@@ -125,7 +126,7 @@ func (container *Container) StatPath(path string) (stat *types.ContainerPathStat
 // ArchivePath creates an archive of the filesystem resource at the specified
 // path in this container. Returns a tar archive of the resource and stat info
 // about the resource.
-func (container *Container) ArchivePath(path string) (content io.ReadCloser, stat *types.ContainerPathStat, err error) {
+func (container *Container) ArchivePath(srcpath string) (content io.ReadCloser, stat *types.ContainerPathStat, err error) {
 	container.Lock()
 
 	defer func() {
@@ -155,9 +156,15 @@ func (container *Container) ArchivePath(path string) (content io.ReadCloser, sta
 	}
 
 	// Consider the given path as an absolute path in the container.
-	absPath := path
-	if !filepath.IsAbs(absPath) {
-		absPath = archive.PreserveTrailingDotOrSeparator(filepath.Join(string(os.PathSeparator), path), path)
+	absPath := srcpath
+
+	// Cross-platform note. We CANNOT use filepath here as on Windows that
+	// would check for drive-letters (eg c:\windows) to indicate absoluteness.
+	// However, the path here on Windows may legitimately be \windows which IS
+	// absolute. The answer is to ToSlash and use path.IsAbs, not filepath.IsAbs.
+	// This is OK on Linux platforms, as ToSlash will be a no-op.
+	if !path.IsAbs(filepath.ToSlash(absPath)) {
+		absPath = archive.PreserveTrailingDotOrSeparator(filepath.Join(string(os.PathSeparator), srcpath), srcpath)
 	}
 
 	resolvedPath, err := container.GetResourcePath(absPath)

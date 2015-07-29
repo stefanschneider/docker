@@ -16,11 +16,11 @@ import (
 
 // FollowSymlinkInScope is a wrapper around evalSymlinksInScope that returns an absolute path
 func FollowSymlinkInScope(path, root string) (string, error) {
-	path, err := filepath.Abs(path)
+	path, err := filepath.Abs(filepath.FromSlash(path))
 	if err != nil {
 		return "", err
 	}
-	root, err = filepath.Abs(root)
+	root, err = filepath.Abs(filepath.FromSlash(root))
 	if err != nil {
 		return "", err
 	}
