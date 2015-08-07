@@ -1,3 +1,5 @@
+// +build !windows
+
 package execdriver
 
 import (
@@ -14,6 +16,20 @@ import (
 	"github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	"github.com/opencontainers/runc/libcontainer/configs"
 )
+
+// NetworkInterface contains all network configs for a driver
+type NetworkInterface struct {
+	CommonNetworkInterface
+
+	// Fields below here are platform specific.
+	Gateway              string `json:"gateway"`
+	IPPrefixLen          int    `json:"ip_prefix_len"`
+	GlobalIPv6Address    string `json:"global_ipv6"`
+	LinkLocalIPv6Address string `json:"link_local_ipv6"`
+	GlobalIPv6PrefixLen  int    `json:"global_ipv6_prefix_len"`
+	IPv6Gateway          string `json:"ipv6_gateway"`
+	HairpinMode          bool   `json:"hairpin_mode"`
+}
 
 // InitContainer is the initialization of a container config.
 // It returns the initial configs for a container. It's mostly

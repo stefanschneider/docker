@@ -8,6 +8,7 @@ type Address struct {
 	PrefixLen int
 }
 
+// TODO Windows. Many of these fields can be factored out.,
 // Settings stores configuration details about the daemon network config
 type Settings struct {
 	Bridge                 string

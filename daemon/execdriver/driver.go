@@ -130,18 +130,12 @@ type UTS struct {
 	HostUTS bool `json:"host_uts"`
 }
 
-// NetworkInterface contains all network configs for a driver
-type NetworkInterface struct {
-	Gateway              string `json:"gateway"`
-	IPAddress            string `json:"ip"`
-	IPPrefixLen          int    `json:"ip_prefix_len"`
-	MacAddress           string `json:"mac"`
-	Bridge               string `json:"bridge"`
-	GlobalIPv6Address    string `json:"global_ipv6"`
-	LinkLocalIPv6Address string `json:"link_local_ipv6"`
-	GlobalIPv6PrefixLen  int    `json:"global_ipv6_prefix_len"`
-	IPv6Gateway          string `json:"ipv6_gateway"`
-	HairpinMode          bool   `json:"hairpin_mode"`
+// CommonNetworkInterface contains the network configs for a driver that
+// are common across platforms.
+type CommonNetworkInterface struct {
+	MacAddress string `json:"mac"`
+	Bridge     string `json:"bridge"`
+	IPAddress  string `json:"ip"`
 }
 
 // Resources contains all resource configs for a driver.

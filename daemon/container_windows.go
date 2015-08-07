@@ -56,13 +56,20 @@ func populateCommand(c *Container, env []string) error {
 
 	parts := strings.SplitN(string(c.hostConfig.NetworkMode), ":", 2)
 	switch parts[0] {
-
 	case "none":
 	case "default", "": // empty string to support existing containers
 		if !c.Config.NetworkDisabled {
 			en.Interface = &execdriver.NetworkInterface{
-				MacAddress: c.Config.MacAddress,
-				Bridge:     c.daemon.config.Bridge.VirtualSwitchName,
+				CommonNetworkInterface: execdriver.CommonNetworkInterface{
+					MacAddress: c.Config.MacAddress,
+					Bridge:     c.daemon.config.Bridge.VirtualSwitchName,
+
+					// TODO Windows. Include IPAddress. There already is a
+					// property IPAddress on execDrive.CommonNetworkInterface,
+					// but there is no CLI option in docker to pass through
+					// an IPAddress on docker run.
+				},
+				PortBindings: c.hostConfig.PortBindings,
 			}
 		}
 	default:
